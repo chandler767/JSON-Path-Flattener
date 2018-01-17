@@ -8,11 +8,13 @@ import (
 	"net/http"
 	"bytes"
 	"io/ioutil"
+	"encoding/json"
 )
 
 var (
 	jsontoflatten string
 	err error
+	nestedjson map[string]interface{}
 )
 
 func GetFromURL(path string) (string, error) { // Get JSON from URL and return body as string.
@@ -63,7 +65,12 @@ func main() {
 					panic(err)
 				}
 			}
-			fmt.Println(jsontoflatten)
+			err := json.Unmarshal([]byte(jsontoflatten), &nestedjson)
+			if err != nil {
+				panic(err)
+			}
+
+			//fmt.Println(jsontoflatten)
 			return
 	    }
 	}
