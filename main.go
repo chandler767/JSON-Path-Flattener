@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"net/http"
+	"bytes"
 	"io/ioutil"
 )
 
@@ -14,7 +15,7 @@ var (
 	err error
 )
 
-func GetFromURL(path string) (string, error) { // Download JSON file and return body as string.
+func GetFromURL(path string) (string, error) { // Get JSON from URL and return body as string.
 	response, err := http.Get(path)
 	if err != nil {
 		return "", err
@@ -33,21 +34,34 @@ func GetFromURL(path string) (string, error) { // Download JSON file and return 
 	}
 }
 
+func OpenFromDisk(path string) (string, error) { // Open JSON file and return body as string.
+	JSONfile, err := os.Open(path)
+	if err != nil{
+		return "", err
+	}
+	defer JSONfile.Close()
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(JSONfile)
+	JSONfile.Close()
+	return buf.String(), nil
+}
+
 func main() {
 	if len(os.Args) > 1 {
 		jsontoflatten = os.Args[1] // Expecting a path, URL, or string.
 		if jsontoflatten != "" {
-			if strings.HasPrefix(jsontoflatten, "https://") || strings.HasPrefix(jsontoflatten, "http://") { // Check for URL prefix
-				fmt.Println("Fetching JSON file from URL.")
+			if strings.HasPrefix(jsontoflatten, "https://") || strings.HasPrefix(jsontoflatten, "http://") { // Check for URL prefix.
+				fmt.Println("Fetching JSON from URL.")
 				jsontoflatten, err = GetFromURL(jsontoflatten)
 				if err != nil {
 					panic(err)
 				}
 			} else if strings.HasSuffix(jsontoflatten, ".json") { // If suffixed with '.json' then assumed to be a file on disk.
-				fmt.Println("Fetching JSON file from disk.")
-
-
-
+				fmt.Println("Fetching JSON from disk.")
+				jsontoflatten, err = OpenFromDisk(jsontoflatten)
+				if err != nil {
+					panic(err)
+				}
 			}
 			fmt.Println(jsontoflatten)
 			return
