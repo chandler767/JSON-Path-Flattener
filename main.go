@@ -32,7 +32,7 @@ func flatten(jsontoflatten map[string]string, prefix string, val reflect.Value) 
 	case reflect.Int:
 		jsontoflatten[prefix] = fmt.Sprintf("%d", val.Int())
 	case reflect.Float64:
-		jsontoflatten[prefix] = fmt.Sprintf("%f", val)
+		jsontoflatten[prefix] = strings.TrimRight(strings.TrimRight(fmt.Sprintf("%.2f", val), "0"), ".") // Remove trailing zeros.
 	case reflect.Map:
 		for _, key := range val.MapKeys() {
 			if key.Kind() == reflect.Interface {
