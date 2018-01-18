@@ -58,7 +58,7 @@ func flatten(jsontoflatten map[string]string, prefix string, val reflect.Value) 
 	}
 }
 
-func getfromurl(path string) (string, error) { // Get JSON from URL and return body as string.
+func getfromurl(path string) (string, error) { // Get JSON from URL.
 	response, err := http.Get(path)
 	if err != nil {
 		return "", err
@@ -77,7 +77,7 @@ func getfromurl(path string) (string, error) { // Get JSON from URL and return b
 	}
 }
 
-func readfromdisk(path string) (string, error) { // Open JSON file and return body as string.
+func readfromdisk(path string) (string, error) { // Open JSON file.
 	JSONfile, err := os.Open(path)
 	if err != nil{
 		return "", err
@@ -107,7 +107,6 @@ func main() {
 				fmt.Println(errors.New("Could not unmarshal JSON. A valid path, URL, or string is required."))
 				panic(err)
 			}
-
 			for key, val := range nestedjson { // Flatten.
 				flatten(flattenedjson, key, reflect.ValueOf(val))
 			}
