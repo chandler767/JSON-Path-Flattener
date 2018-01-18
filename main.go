@@ -8,53 +8,52 @@ import (
 	"net/http"
 	"bytes"
 	"io/ioutil"
-	"encoding/json"
 	"reflect"
-	"strconv"
+	"github.com/json-iterator/go"
 )
 
 var (
 	err error
 	nestedjson map[string]interface{}
-	flattenedjson map[string]interface{} = make(map[string]interface{})
+	flattenedjson map[string]string = make(map[string]string)
 )
 
-func flatten(jsontoflatten map[string]interface{}, key string, flattenedjson *map[string]interface{}) {
-	for rkey, val := range jsontoflatten {
-		fkey := key+rkey
-		valref := reflect.ValueOf(val)
-		if valref.Kind() == reflect.Interface {
-			valref = valref.Elem() // Get the value
+func flatten(jsontoflatten map[string]string, prefix string, val reflect.Value) {
+	if val.Kind() == reflect.Interface {
+		val = val.Elem()
+	}
+	switch val.Kind() {
+	case reflect.Bool:
+		if val.Bool() {
+			jsontoflatten[prefix] = "true"
+		} else {
+			jsontoflatten[prefix] = "false"
 		}
-		switch valref.Kind() {
-			case reflect.Bool: 
-				if valref.Bool() {
-					(*flattenedjson)[fkey] = "true"
-				} else {
-					(*flattenedjson)[fkey] = "false"
-				}
-			case reflect.Int:
-				(*flattenedjson)[fkey] = fmt.Sprintf("%d", val)
-			case reflect.Float64:
-				(*flattenedjson)[fkey] = fmt.Sprintf("%f", val)
-			case reflect.String:
-				(*flattenedjson)[fkey] = val.(string)
-			case reflect.Slice:
-				for i := 0; i<len(val.([]interface{})); i++ {
-					if _, ok := val.([]string); ok {
-						(*flattenedjson)[string(i)] = val.(string)
-					} else if _, ok := val.([]int); ok {
-						(*flattenedjson)[string(i)] = val.(int)
-					} else {
-						flatten(val.([]interface{})[i].(map[string]interface{}), rkey+"["+strconv.Itoa(i)+"].", flattenedjson)
-					}
-				}
-			default:
-				if !valref.IsValid() {
-					(*flattenedjson)[fkey] = "nil"
-				} else {
-					panic(fmt.Sprintf("Unexpected JSON value: %s", val))
-				}
+	case reflect.Int:
+		jsontoflatten[prefix] = fmt.Sprintf("%d", val.Int())
+	case reflect.Float64:
+		jsontoflatten[prefix] = fmt.Sprintf("%f", val)
+	case reflect.Map:
+		for _, key := range val.MapKeys() {
+			if key.Kind() == reflect.Interface {
+				key = key.Elem()
+			}
+			if key.Kind() != reflect.String {
+				panic(fmt.Sprintf("Key is not string: %s", key))
+			}
+			flatten(jsontoflatten, fmt.Sprintf("%s.%s", prefix, key.String()), val.MapIndex(key))
+		}
+	case reflect.Slice:
+		for i := 0; i < val.Len(); i++ {
+			flatten(jsontoflatten, fmt.Sprintf("%s[%d]", prefix, i), val.Index(i))
+		}
+	case reflect.String:
+		jsontoflatten[prefix] = val.String()
+	default:
+		if !val.IsValid() {
+			jsontoflatten[prefix] = "nil" // Insert a nil as string.
+		} else {
+			panic(fmt.Sprintf("Unexpected JSON value: %s", val)) // Check JSON format.
 		}
 	}
 }
@@ -102,14 +101,18 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			err = json.Unmarshal([]byte(jsontoflatten), &nestedjson) 
+			var json = jsoniter.ConfigCompatibleWithStandardLibrary
+			err = json.Unmarshal([]byte(jsontoflatten), &nestedjson)
 			if err != nil {
 				fmt.Println(errors.New("Could not unmarshal JSON. A valid path, URL, or string is required."))
 				panic(err)
 			}
-			flatten(nestedjson, ".", &flattenedjson) // Flatten.
-			for k, v := range flattenedjson { // Print.
-				fmt.Println(fmt.Sprintf("%s=%s", k, v))
+
+			for key, val := range nestedjson { // Flatten.
+				flatten(flattenedjson, key, reflect.ValueOf(val))
+			}
+			for key, val := range flattenedjson { // Print.
+				fmt.Println(fmt.Sprintf("%s=%s", key, val))
 			}
 			return
 	    }
