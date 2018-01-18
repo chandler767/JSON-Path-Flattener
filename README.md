@@ -6,7 +6,6 @@ You can pass a filepath, URL, or string to flatten.
 go run main.go ~/JSON-path-flattening/sample.json
 go run main.go https://raw.githubusercontent.com/chandler767/JSON-path-flattening/master/sample.json
 go run main.go "{\"server_ip\":\"192.168.0.1\",\"action\":\"stop\"}"
-}"
 ```
 
 A JSON path is a string that uniquely identifies a subvalue inside a JSON 
