@@ -49,10 +49,6 @@ func flatten(jsontoflatten map[string]interface{}, key string, flattenedjson *ma
 						flatten(val.([]interface{})[i].(map[string]interface{}), rkey+"["+strconv.Itoa(i)+"].", flattenedjson)
 					}
 				}
-			case reflect.Map:
-				for i := 0; i < valref.Len(); i++ {
-					flatten(val.(map[string]interface{}), rkey+".", flattenedjson)
-				}
 			default:
 				if !valref.IsValid() {
 					(*flattenedjson)[fkey] = "nil"
@@ -111,7 +107,7 @@ func main() {
 				fmt.Println(errors.New("Could not unmarshal JSON. A valid path, URL, or string is required."))
 				panic(err)
 			}
-			flatten(nestedjson, "", &flattenedjson) // Flatten.
+			flatten(nestedjson, ".", &flattenedjson) // Flatten.
 			for k, v := range flattenedjson { // Print.
 				fmt.Println(fmt.Sprintf("%s=%s", k, v))
 			}
