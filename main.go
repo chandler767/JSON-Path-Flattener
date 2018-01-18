@@ -112,7 +112,7 @@ func main() {
 				flatten(flattenedjson, key, reflect.ValueOf(val))
 			}
 			for key, val := range flattenedjson { // Print.
-				fmt.Println(fmt.Sprintf("%s=%s", key, val))
+				fmt.Println(fmt.Sprintf(".%s=%s", key, val))
 			}
 			return
 	    }
